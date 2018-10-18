@@ -2,10 +2,6 @@ from models import Model, MotionMap
 from linalg import vector, oriented_basis
 
 
-class ManagerError(Exception):
-    pass
-
-
 class ModelManager:
     '''
     Controls a set of models
@@ -16,7 +12,7 @@ class ModelManager:
 
     def add_model(self, key, **kwargs):
         if key in self._models:
-            raise ManagerError(f'A model already exists with key {key}')
+            raise KeyError(f'A model already exists with key {key}')
         model = kwargs.get('model', None)
         if model is not None:
             if not isinstance(model, Model):
