@@ -1,0 +1,12 @@
+# OSX directory files
+.DS_Store
+
+# virtual environment
+venv/
+
+# pycharm directory
+.idea/
+
+# bytecode
+__pycache__/
+*.pyc
