@@ -26,41 +26,44 @@ BOX = {
 
 
 def xz_circular_motion(time, radius, frequency, y=0):
+    '''
+    Circular motion in the xz plane
+    '''
     ang_freq = 2*np.pi*frequency
     x = radius*np.cos(time*ang_freq)
     z = radius*np.sin(time*ang_freq)
     return x, y, z
 
 
-def sphere2_position(time):
+def cube2_position(time):
     '''
-    Make sphere2 orbit the origin
+    Make cube2 orbit the origin
     '''
     return xz_circular_motion(time, 15, 0.1)
 
 
-def sphere3_position(time):
+def cube3_position(time):
     '''
-    Make sphere3 orbit sphere2
+    Make cube3 orbit cube2
     '''
-    xc, yc, zc = sphere2_position(time)
+    xc, yc, zc = cube2_position(time)
     xr, yr, zr = xz_circular_motion(time, 3, 1)
     return xc + xr, yc + yr, zc - zr
 
 
-def sphere4_position(time):
+def cube4_position(time):
     '''
-    Make sphere4 orbit the origin
+    Make cube4 orbit the origin
     '''
     x, y, z = xz_circular_motion(time, 35, 0.05)
     return x, y, -z
 
 
-def sphere5_position(time):
+def cube5_position(time):
     '''
-    Make sphere5 orbit sphere4
+    Make cube5 orbit cube4
     '''
-    xc, yc, zc = sphere4_position(time)
+    xc, yc, zc = cube4_position(time)
     xr, yr, zr = xz_circular_motion(time, 10, 0.15)
     return xc + xr, yc + yr, zc + zr
 
@@ -70,29 +73,29 @@ def main():
     manager = ModelManager()
 
     # Create box models
-    manager.add_model('sphere1', vertices=BOX['vertices'], faces=BOX['faces'])
-    manager.add_model('sphere2', vertices=BOX['vertices'], faces=BOX['faces'])
-    manager.add_model('sphere3', vertices=BOX['vertices'], faces=BOX['faces'])
-    manager.add_model('sphere4', vertices=BOX['vertices'], faces=BOX['faces'])
-    manager.add_model('sphere5', vertices=BOX['vertices'], faces=BOX['faces'])
+    manager.add_model('cube1', vertices=BOX['vertices'], faces=BOX['faces'])
+    manager.add_model('cube2', vertices=BOX['vertices'], faces=BOX['faces'])
+    manager.add_model('cube3', vertices=BOX['vertices'], faces=BOX['faces'])
+    manager.add_model('cube4', vertices=BOX['vertices'], faces=BOX['faces'])
+    manager.add_model('cube5', vertices=BOX['vertices'], faces=BOX['faces'])
 
-    # Recolour boxes
-    manager.set_colour('sphere1', (255, 255, 255))
-    manager.set_colour('sphere2', (0, 255, 0))
-    manager.set_colour('sphere3', (255, 0, 0))
-    manager.set_colour('sphere4', (0, 0, 255))
-    manager.set_colour('sphere5', (255, 255, 0))
+    # Recolour cubes
+    manager.set_colour('cube1', (255, 255, 255))
+    manager.set_colour('cube2', (0, 255, 0))
+    manager.set_colour('cube3', (255, 0, 0))
+    manager.set_colour('cube4', (0, 0, 255))
+    manager.set_colour('cube5', (255, 255, 0))
 
-    # Scale the spheres
-    manager.scale('sphere1', 10)
-    manager.scale('sphere3', 0.5)
-    manager.scale('sphere4', 2)
+    # Scale the cubes
+    manager.scale('cube1', 10)
+    manager.scale('cube3', 0.5)
+    manager.scale('cube4', 2)
 
     # Add motion to the models (box1 is stationary)
-    manager.add_motion('sphere2', positions=sphere2_position)
-    manager.add_motion('sphere3', positions=sphere3_position)
-    manager.add_motion('sphere4', positions=sphere4_position)
-    manager.add_motion('sphere5', positions=sphere5_position)
+    manager.add_motion('cube2', positions=cube2_position)
+    manager.add_motion('cube3', positions=cube3_position)
+    manager.add_motion('cube4', positions=cube4_position)
+    manager.add_motion('cube5', positions=cube5_position)
 
     # Create scene
     scene = Scene()
@@ -105,7 +108,7 @@ def main():
     scene.add_manager(manager)
 
     # Run scene
-    scene.run(duration=60)
+    scene.run()
 
 
 if __name__ == '__main__':

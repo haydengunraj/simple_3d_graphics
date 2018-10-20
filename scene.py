@@ -1,11 +1,10 @@
 import numpy as np
 import pygame
 
-from manager import ModelManager, ManagerError
+from manager import ModelManager
 from models import Camera
 from linalg import rotate2d, project2d
 
-DEFAULT_DURATION = 120.0  # two minutes
 SCALE_FACTOR = 400  # scaling factor to slow down mouse movements
 MOTION_THRESHOLD = 200  # prevent overly erratic mouse movements
 
@@ -53,13 +52,13 @@ class Scene:
             raise TypeError('Colours must be RGB tuples')
         self._background = colour
 
-    def run(self, duration=DEFAULT_DURATION):
+    def run(self, duration=0):
         self._initialize()
         time = 0.
         while True:
             dt = self._clock.tick()/1000.
             time += dt
-            if time > duration:
+            if duration and time > duration:
                 self._quit()
 
             self._update_camera(dt, pygame.key.get_pressed())
@@ -75,7 +74,7 @@ class Scene:
 
     def _initialize(self):
         if self._model_manager is None:
-            raise ManagerError('No ModelManager has been associated with this Scene')
+            raise ValueError('No ModelManager has been associated with this Scene')
         pygame.init()
         self._min_z = 1
         if self._title is not None:
