@@ -9,15 +9,11 @@ YAXIS = (0., 1., 0.)
 ZAXIS = (0., 0., 1.)
 
 
-class BasisError(Exception):
-    pass
-
-
 def vector(vec, w=None):
     '''
     A vector with optional w-value
     '''
-    vec = np.array(vec).astype(np.float64).reshape((3, 1))
+    vec = np.array(list(vec)).astype(np.float64).reshape((3, 1))
     if w is not None:
         vec = np.vstack((vec, [w]))
     return vec
@@ -82,7 +78,7 @@ def basis_matrix(basis):
     if is_orthogonal_basis(basis[0], basis[1], basis[2]):
         return np.hstack((unit_vector_matrix(basis, w=0), vector((0, 0, 0), w=1)))
     else:
-        raise BasisError(f'Vectors are not orthogonal or not right-handed')
+        raise ValueError(f'Vectors are not orthogonal or not right-handed')
 
 
 def is_orthogonal_basis(x, y, z):

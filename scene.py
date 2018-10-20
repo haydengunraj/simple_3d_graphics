@@ -10,6 +10,9 @@ MOTION_THRESHOLD = 200  # prevent overly erratic mouse movements
 
 
 class Scene:
+    '''
+    Manages input/output of the pygame display
+    '''
     def __init__(self):
         self._screen_size = (400, 400)
         self._center = (self._screen_size[0]//2, self._screen_size[1]//2)
@@ -22,37 +25,72 @@ class Scene:
         self._camera = Camera()
 
     def add_manager(self, model_manager):
+        '''
+        Register a ModelManager with the Scene
+        Note that this will replace any existing manager
+        '''
         if not isinstance(model_manager, ModelManager):
             raise TypeError('Input must be of type ModelManager')
         self._model_manager = model_manager
 
     def set_viewpoint(self, viewpoint):
+        '''
+        Set the camera position (viewpoint is a 3-element iterable)
+        '''
         self._camera.viewpoint = viewpoint
 
     def get_viewpoint(self):
+        '''
+        Get the camera position
+        '''
         return self._camera.viewpoint
 
     def set_rotation(self, rotation):
+        '''
+        Set the rotation. rotation is a 2-element iterable, with the first element about
+        the camera x-axis (up/down) and the second element about the camera y-axis (side to side).
+        '''
         self._camera.rotation = rotation
 
     def get_rotation(self):
+        '''
+        Get the camera rotation state
+        '''
         return self._camera.rotation
 
     def set_screen_size(self, width, height):
+        '''
+        Set the screen size. This should be done before Scene.run() is invoked.
+        '''
         self._screen_size = (width, height)
 
     def set_title(self, title):
+        '''
+        Set the pygame window title. This should be done before Scene.run() is invoked.
+        '''
         self._title = title
 
     def set_clipping_plane(self, distance):
+        '''
+        Set the close clipping plane. This should be done before Scene.run() is invoked.
+        '''
         self._camera.clip_plane = distance
 
     def set_background(self, colour):
+        '''
+        Set the window background. This should be done before Scene.run() is invoked.
+        '''
         if len(colour) != 3:
             raise TypeError('Colours must be RGB tuples')
         self._background = colour
 
     def run(self, duration=0):
+        '''
+        Run the Scene. This will create a pygame window with the models contained in the
+        ModelManager, orient the camera, and animate the models based on their respective
+        MotionMaps (see ModelManager for details). The duration argument specifies the time
+        for which to run the scene. A value of 0 will cause the scene to run indefinitely.
+        '''
         self._initialize()
         time = 0.
         while True:
@@ -73,6 +111,9 @@ class Scene:
             pygame.time.wait(5)
 
     def _initialize(self):
+        '''
+        Initialization of the pygame window, camera, and controls
+        '''
         if self._model_manager is None:
             raise ValueError('No ModelManager has been associated with this Scene')
         pygame.init()
@@ -91,6 +132,9 @@ class Scene:
         pygame.event.set_grab(True)
 
     def _update_camera(self, dt, keys):
+        '''
+        Update the camera position and orientation
+        '''
         s = dt*10
         cam_pos = self._camera.viewpoint
         if keys[pygame.K_LSHIFT]:
@@ -114,6 +158,10 @@ class Scene:
         self._camera.viewpoint = cam_pos
 
     def _draw_models(self):
+        '''
+        Draw the models contained in the ModelManager. Models are drawn face-by-face, with all
+        faces from all models being sorted by depth and drawn in reverse order (farthest first).
+        '''
         faces_to_render = []
         colours = []
         depths = []
@@ -138,6 +186,9 @@ class Scene:
                 pygame.draw.line(self._screen, (0, 0, 0), faces_to_render[i][j-1], faces_to_render[i][j])
 
     def _convert_coords(self, vertex):
+        '''
+        Convert world coordinates to camera coordinates
+        '''
         x = vertex[0] - self._camera.viewpoint[0]
         y = vertex[1] - self._camera.viewpoint[1]
         z = vertex[2] - self._camera.viewpoint[2]
@@ -146,6 +197,9 @@ class Scene:
         return x, y, z
 
     def _handle_event(self, event):
+        '''
+        Handler for mouse/keyboard events
+        '''
         if event.type == pygame.MOUSEMOTION:
             self._mouse_motion(event)
         elif event.type == pygame.KEYDOWN:
@@ -153,6 +207,9 @@ class Scene:
                 self._quit()
 
     def _mouse_motion(self, event):
+        '''
+        Handler for mouse movement
+        '''
         x, y = event.rel
         if abs(x) > MOTION_THRESHOLD or abs(y) > MOTION_THRESHOLD:
             return
@@ -162,15 +219,21 @@ class Scene:
 
     @staticmethod
     def _quit():
+        '''
+        Quit the Scene
+        '''
         pygame.quit()
         exit()
 
     def _update(self, time):
+        '''
+        Update the models in the Scene
+        '''
         self._model_manager.update_models(time)
 
     def _clip(self, face_vertices, clip_dist):
         '''
-        Clip parts of the face that are 'behind' the camera
+        Clip parts of the face that are 'behind' the camera (see set_clipping_plane)
         '''
         i = 0
         while i < len(face_vertices):

@@ -5,37 +5,56 @@ from linalg import vector, vector_matrix, basis_matrix, translation_matrix, XAXI
 
 
 class Space:
+    '''
+    Representation of a space in world coordinates
+    '''
     def __init__(self, basis=(XAXIS, YAXIS, ZAXIS), origin=(0, 0, 0)):
+        '''
+        basis:  a list of the basis vectors of the space
+        origin: the position of the center of the space
+        '''
         self._basis = None
         self._translation = None
         self._inverse = None
-        self.update(basis=basis, origin=origin)
 
-    def update(self, basis=None, origin=None):
         if basis is not None:
-            self._basis = basis_matrix(basis)
+            self.basis = basis
         if origin is not None:
-            self._translation = translation_matrix(origin[0], origin[1], origin[2])
-        self._inverse = np.matmul(self._translation, np.linalg.inv(self._basis))
+            self.origin = origin
 
     def invert(self, points):
+        '''
+        Convert a point in the Space's coordinates to world coordinates
+        '''
         return np.matmul(self._inverse, points)
 
     @property
     def origin(self):
+        '''
+        Origin getter
+        '''
         return self._translation[:3, 3]
 
     @origin.setter
     def origin(self, origin):
+        '''
+        Origin setter
+        '''
         self._translation = translation_matrix(origin[0], origin[1], origin[2])
         self._inverse = np.matmul(self._translation, np.linalg.inv(self._basis))
 
     @property
     def basis(self):
+        '''
+        Basis getter
+        '''
         return self._basis[:3, :3]
 
     @basis.setter
     def basis(self, basis):
+        '''
+        Basis setter
+        '''
         self._basis = basis_matrix(basis)
         self._inverse = np.matmul(self._translation, np.linalg.inv(self._basis))
 
@@ -45,10 +64,15 @@ class Model:
     Simple wireframe representation of an object
     '''
     def __init__(self, vertices=None, faces=None, colour=(255, 0, 0)):
+        '''
+        vertices:   a list of the model's vertices
+        faces:      a list of the model's faces, described by the indices of their vertices
+        colour:     an RGB triplet describing the model's colour
+        '''
         self._vertices = np.zeros((4, 0))
         self._faces = []
         self._colour = colour
-        self._space = Space()
+        self._space = Space()  # initial Space is the same as the world frame
 
         if vertices is not None:
             self.vertices = vertices
@@ -59,78 +83,139 @@ class Model:
 
     @property
     def origin(self):
+        '''
+        Position of the model in world coordinates
+        '''
         return self._space.origin.reshape(3, 1)
 
     @origin.setter
     def origin(self, origin):
-        self._space.update(origin=origin)
+        '''
+        Set the origin of the model space in world coordinates
+        '''
+        self._space.origin = origin
 
     @property
     def basis(self):
+        '''
+        Basis vectors of the model in world coordinates
+        '''
         return [tuple(self._space.basis[:, i] for i in range(3))]
 
     @basis.setter
     def basis(self, basis):
-        self._space.update(basis=basis)
+        '''
+        Set the basis vectors of the model in world coordinates
+        '''
+        self._space.basis = basis
 
     @property
     def vertices(self):
+        '''
+        List of vertices of the model
+        '''
         return [tuple(self._vertices[:3, i]) for i in range(self._vertices.shape[1])]
 
     @vertices.setter
     def vertices(self, vertices):
+        '''
+        Set the model vertices
+        '''
         self._vertices = vector_matrix(vertices, w=1)
 
     @property
     def faces(self):
+        '''
+        List of faces of the model, specified by their vertex indices
+        '''
         return self._faces
 
     @faces.setter
     def faces(self, faces):
+        '''
+        Set the faces of the model. Note that this erases any existing faces.
+        To add new faces, use add_faces instead.
+        '''
+        self._faces = []
+        self.add_faces(faces)
+
+    def add_faces(self, faces):
+        '''
+        Add new faces to the model
+        '''
         for f in faces:
             self._add_face(f)
 
     @property
     def colour(self):
+        '''
+        Current model colour
+        '''
         return self._colour
 
     @colour.setter
     def colour(self, colour):
+        '''
+        Set model colour
+        '''
         if len(colour) != 3:
             raise TypeError('Colours must be RGB triplets')
         self._colour = tuple(colour)
 
     @property
     def centroid(self):
+        '''
+        Centroid of the model in world coordinates
+        '''
         return np.sum(self._vertices[:3], axis=1)/self._vertices.shape[1]
 
     @property
     def world_vertices(self):
+        '''
+        List of model vertices in world coordinates
+        '''
         world_vertices = self._space.invert(self._vertices)
         return [tuple(world_vertices[:3, i]) for i in range(self._vertices.shape[1])]
 
     def set_local_center(self, center):
+        '''
+        Set the local center of the model. This is the point at which
+        the origin is assumed to be.
+        '''
         tmat = translation_matrix(-center[0], -center[1], -center[2])
         self._vertices = np.matmul(tmat, self._vertices)
 
     def change_local_basis(self, basis):
+        '''
+        Change the local basis of the model. This allows the model to be oriented
+        locally, without technically changing the orientation in the world space.
+        '''
         current_basis = [tuple(self._space.basis[:, i]) for i in range(3)]
-        self._space.update(basis=basis)
+        self._space.basis = basis
         self._vertices = self._space.invert(self._vertices)
-        self._space.update(basis=current_basis)
+        self._space.basis = current_basis
 
     def scale(self, factor):
+        '''
+        Scale the model about its origin
+        '''
         self._vertices[:3, :] = self._vertices[:3, :]*factor
-
-    def _add_face(self, face):
-        if any((i < 0 or i >= self._vertices.shape[1] for i in face)):
-            raise IndexError('Face contains vertices which do not exist')
-        self._faces.append(tuple(i for i in face))
 
     @classmethod
     def from_stl(cls, stl_file):
+        '''
+        Create a model from an STL file
+        '''
         vertices, faces = cls._convert_stl(stl_file)
         return cls(vertices=vertices, faces=faces)
+
+    def _add_face(self, face):
+        '''
+        Add a face to the model
+        '''
+        if any((i < 0 or i >= self._vertices.shape[1] for i in face)):
+            raise IndexError('Face contains vertices which do not exist')
+        self._faces.append(tuple(i for i in face))
 
     @staticmethod
     def _convert_stl(file):
@@ -153,6 +238,14 @@ class MotionMap:
     Defines motion over time
     '''
     def __init__(self, positions=(), orientations=(), times=()):
+        '''
+        positions:      iterable or callable defining position over time
+        orientations:   iterable or callable defining position over time
+        times:          iterable of times
+
+        Note: if using non-empty iterables, the iterables must have the same length
+        and are assumed to be parallel (i.e. at time times[0], position is positions[0])
+        '''
         self._position = None
         self._orientation = None
 
@@ -167,6 +260,9 @@ class MotionMap:
             self._orientation = self._piecewise(times, orientations)
 
     def get_state(self, time):
+        '''
+        Get the state of motion at the given time
+        '''
         return self._position(time), self._orientation(time)
 
     @staticmethod
@@ -175,6 +271,7 @@ class MotionMap:
         Turns a list of times and vals into a continuous function, v(t)
         '''
         times = np.array(times[:len(vals)]).ravel()
+        vals = list(vals)
         last_idx = [0]  # list so that it is mutable
 
         def v(t):
@@ -203,18 +300,31 @@ class Camera:
 
     @property
     def viewpoint(self):
+        '''
+        Position of the camera in world coordinates
+        '''
         return self._viewpoint
 
     @viewpoint.setter
     def viewpoint(self, viewpoint):
+        '''
+        Set the camera position in world coordinates
+        '''
         self._viewpoint = vector(viewpoint)
 
     @property
     def rotation(self):
+        '''
+        Rotation state of the camera
+        '''
         return self._rotation
 
     @rotation.setter
     def rotation(self, rotation):
+        '''
+        Set the rotation state of the camera. Must be a 2-element iterable.
+        '''
+        rotation = tuple(rotation)
         if len(rotation) != 2:
             raise TypeError('Rotation must have length 2')
-        self._rotation = tuple(rotation)
+        self._rotation = rotation
