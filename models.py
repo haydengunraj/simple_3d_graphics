@@ -59,6 +59,9 @@ class Space:
         self._update_inverse()
 
     def _update_inverse(self):
+        '''
+        Update the inverse transformation matrix
+        '''
         if self._basis is not None and self._translation is not None:
             self._inverse = np.matmul(self._translation, np.linalg.inv(self._basis))
 
