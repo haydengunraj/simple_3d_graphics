@@ -41,7 +41,7 @@ class Space:
         Origin setter
         '''
         self._translation = translation_matrix(origin[0], origin[1], origin[2])
-        self._inverse = np.matmul(self._translation, np.linalg.inv(self._basis))
+        self._update_inverse()
 
     @property
     def basis(self):
@@ -56,7 +56,11 @@ class Space:
         Basis setter
         '''
         self._basis = basis_matrix(basis)
-        self._inverse = np.matmul(self._translation, np.linalg.inv(self._basis))
+        self._update_inverse()
+
+    def _update_inverse(self):
+        if self._basis is not None and self._translation is not None:
+            self._inverse = np.matmul(self._translation, np.linalg.inv(self._basis))
 
 
 class Model:
