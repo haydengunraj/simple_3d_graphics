@@ -299,11 +299,16 @@ class Camera:
     Manages the camera
     '''
     def __init__(self, clip_plane=1, viewpoint=(0, 0, 0), rotation=(0, 0)):
-        self._viewpoint = viewpoint
-        self._rotation = rotation
+        self._viewpoint = None
+        self._rotation = None
         self.clip_plane = clip_plane
         self.proj_x = None
         self.proj_y = None
+
+        if viewpoint is not None:
+            self.viewpoint = viewpoint
+        if rotation is not None:
+            self.rotation = rotation
 
     @property
     def viewpoint(self):
